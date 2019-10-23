@@ -1,0 +1,10 @@
+{
+  "env": "venv",
+  "requirements": "requirements.txt",
+  "service": {
+    "name": "pole",
+    "program": "anode_pole",
+    "arguments": ["-c", "c.json", "--r", "passworfdf"],
+    "start": "auto"
+  }
+}
