@@ -1,6 +1,6 @@
 # Easy Deployment
 
-Easy deployment tool for Python application. It can manager virtual environment 
+Easy deployment tool for Python application. It can manage virtual environment and create service.
 
 ## Install
 Download and install the `ez-deploy` package for python.
