@@ -17,7 +17,7 @@ def get_python_bin(home):
     return python_bin
 
 
-def install(python_bin, name, program, arguments=None, **kwargs):
+def install(path, name, program, arguments=None, **kwargs):
     if not name:
         print_error('Service not specified')
         sys.exit(1)
@@ -26,10 +26,16 @@ def install(python_bin, name, program, arguments=None, **kwargs):
         sys.exit(1)
     print(f'Installing {name}...')
     if virtualenv.IS_WIN:
-        if not python_bin or not os.path.exists(python_bin) or not os.path.isfile(python_bin):
-            print_error('Invalid python path')
+        if not path:
+            print_error('Invalid home path')
             sys.exit(1)
-        args = [python_bin, '-m', 'srvwrapper', name, program]
+        home_dir, lib_dir, inc_dir, bin_dir = virtualenv.path_locations(path, dry_run=True)
+        wrapper_path = os.path.join(bin_dir, 'srvwrapper.exe')
+        activate_path = os.path.join(bin_dir, 'activate.bat')
+        if not os.path.exists(wrapper_path) or not os.path.exists(activate_path):
+            print_error('Invalid wrapper path or activate path')
+            sys.exit(1)
+        args = [activate_path, '&', wrapper_path, name, program]
         if arguments:
             args.extend(['--arguments', ' '.join(arguments)])
         for extra in ['display', 'description', 'start', 'depend', 'obj', 'password']:
@@ -96,14 +102,14 @@ def stop(service):
 def deploy(path, requirements=None, package_dir=None):
     print(f'Using environment \'{path}\'')
     home_dir, lib_dir, inc_dir, bin_dir = virtualenv.path_locations(path, True)
-    python_bin = os.path.join(bin_dir, 'python')
+    pip_bin = os.path.join(bin_dir, 'pip')
     if virtualenv.IS_WIN:
-        python_bin += '.exe'
+        pip_bin += '.exe'
     if not requirements and os.path.exists('requirements.txt'):
         requirements = 'requirements.txt'
     if requirements:
         print(f'Using requirements file: {requirements}')
-        args = [python_bin, '-m', 'pip', 'install', '-r', requirements]
+        args = [pip_bin, 'install', '-r', requirements]
         if package_dir:
             args.extend(['--no-index', '--find-links', package_dir])
         subprocess.check_call(args, shell=True)
@@ -123,13 +129,14 @@ def main():
     parser.add_argument('command', help='Command <env|deploy|install|uninstall|start|stop>')
 
     parser.add_argument('-c', '--config', dest='config', action='store', default='deployment.json',
-                        help='use config file (JSON format)')
+                        help='use config file (JSON format, default=deployment.json)')
     parser.add_argument('--env', dest='env', help='virtual environment path')
-    parser.add_argument('--requirements', dest='requirements', help='package requirements file')
+    parser.add_argument('--requirements', dest='requirements',
+                        help='package requirements file (default=requirements.txt)')
     parser.add_argument('--dir', dest='dir', help='package lookup directory')
     parser.add_argument('--service-name', dest='service_name', help='service name')
     parser.add_argument('--service-program', dest='service_program', help='service bin path')
-    parser.add_argument('--service-arguments', dest='service_arguments', help='service arguments')
+    parser.add_argument('--service-arguments', nargs='+', dest='service_arguments', help='service arguments')
     parser.add_argument('--service-start', dest='service_start', help='service start mode <auto|manual>')
     windows_group = parser.add_argument_group('Options for Windows', 'Service options for Windows')
     windows_group.add_argument('--service-display', dest='service_display', help='service display name')
@@ -138,6 +145,7 @@ def main():
     windows_group.add_argument('--service-obj', dest='service_obj', help='service login account')
     windows_group.add_argument('--service-password', dest='service_password', help='service login password')
     options = parser.parse_args()
+    virtualenv.logger.consumers = [(virtualenv.logger.LEVELS[2], sys.stdout)]
     config = {}
     if os.path.exists(options.config):
         with open(options.config, encoding='utf8') as f:
@@ -157,7 +165,7 @@ def main():
                    'depends': ['env']},
         'start': {'func': start, 'args': (config.get('service', {}).get('name'),)},
         'stop': {'func': stop, 'args': (config.get('service', {}).get('name'),)},
-        'install': {'func': install, 'args': (get_python_bin(config.get('env')),),
+        'install': {'func': install, 'args': (config.get('env'),),
                     'kwargs': {'name': service.get('name'), 'program': service.get('program'), **service},
                     'depends': ['deploy']},
         'uninstall': {'func': uninstall, 'args': (config.get('service', {}).get('name'),)},
