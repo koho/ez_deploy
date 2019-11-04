@@ -20,6 +20,7 @@ usage: ez_deploy.py [-h] [-c CONFIG] [--env ENV] [--requirements REQUIREMENTS]
                     [--service-depend SERVICE_DEPEND]
                     [--service-obj SERVICE_OBJ]
                     [--service-password SERVICE_PASSWORD]
+                    [--service-file SERVICE_FILE]
                     command
 
 Easy Deployment Tool
@@ -37,16 +38,16 @@ optional arguments:
   --dir DIR             package lookup directory
   --service-name SERVICE_NAME
                         service name
+
+Options for Windows:
+  Service options for Windows
+
   --service-program SERVICE_PROGRAM
                         service bin path
   --service-arguments SERVICE_ARGUMENTS [SERVICE_ARGUMENTS ...]
                         service arguments
   --service-start SERVICE_START
                         service start mode <auto|manual>
-
-Options for Windows:
-  Service options for Windows
-
   --service-display SERVICE_DISPLAY
                         service display name
   --service-description SERVICE_DESCRIPTION
@@ -57,6 +58,12 @@ Options for Windows:
                         service login account
   --service-password SERVICE_PASSWORD
                         service login password
+
+Options for Linux:
+  Service options for Linux
+
+  --service-file SERVICE_FILE
+                        service file to install (default=SERVICE_NAME.service)
 ```
 Also, you can create a `deployment.json` file in a directory and run `ez-deploy` to load it.
 ```json
@@ -70,7 +77,8 @@ Also, you can create a `deployment.json` file in a directory and run `ez-deploy`
     "arguments": ["main.py"],
     "display": "Example Service",
     "description": "A service",
-    "start": "auto"
+    "start": "auto",
+    "file": "example.service"
   }
 }
 ```
