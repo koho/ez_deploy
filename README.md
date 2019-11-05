@@ -12,15 +12,16 @@ Use the `ez-deploy` command to manage deployment.
 ```
 usage: ez_deploy.py [-h] [-c CONFIG] [--env ENV] [--requirements REQUIREMENTS]
                     [--dir DIR] [--service-name SERVICE_NAME]
+                    [--service-start SERVICE_START]
                     [--service-program SERVICE_PROGRAM]
                     [--service-arguments SERVICE_ARGUMENTS [SERVICE_ARGUMENTS ...]]
-                    [--service-start SERVICE_START]
                     [--service-display SERVICE_DISPLAY]
                     [--service-description SERVICE_DESCRIPTION]
                     [--service-depend SERVICE_DEPEND]
                     [--service-obj SERVICE_OBJ]
                     [--service-password SERVICE_PASSWORD]
                     [--service-file SERVICE_FILE]
+                    [--service-convert-path SERVICE_CONVERT_PATH]
                     command
 
 Easy Deployment Tool
@@ -38,6 +39,8 @@ optional arguments:
   --dir DIR             package lookup directory
   --service-name SERVICE_NAME
                         service name
+  --service-start SERVICE_START
+                        service start mode <auto|manual> (default=manual)
 
 Options for Windows:
   Service options for Windows
@@ -46,8 +49,6 @@ Options for Windows:
                         service bin path
   --service-arguments SERVICE_ARGUMENTS [SERVICE_ARGUMENTS ...]
                         service arguments
-  --service-start SERVICE_START
-                        service start mode <auto|manual>
   --service-display SERVICE_DISPLAY
                         service display name
   --service-description SERVICE_DESCRIPTION
@@ -64,6 +65,8 @@ Options for Linux:
 
   --service-file SERVICE_FILE
                         service file to install (default=SERVICE_NAME.service)
+  --service-convert-path SERVICE_CONVERT_PATH
+                        convert service path to absolute path
 ```
 Also, you can create a `deployment.json` file in a directory and run `ez-deploy` to load it.
 ```json
