@@ -171,7 +171,11 @@ def main():
         if value is None:
             continue
         pk, sep, sk = name.partition('_')
+        if not pk:
+            continue
         if sk:
+            if pk not in config:
+                config[pk] = {}
             config[pk][sk] = value
         else:
             config[pk] = value
