@@ -147,7 +147,8 @@ def main():
                         help='package requirements file (default=requirements.txt)')
     parser.add_argument('--dir', dest='dir', help='package lookup directory')
     parser.add_argument('--service-name', dest='service_name', help='service name')
-    parser.add_argument('--service-start', dest='service_start', help='service start mode <auto|manual>')
+    parser.add_argument('--service-start', dest='service_start',
+                        help='service start mode <auto|manual> (default=manual)')
     windows_group = parser.add_argument_group('Options for Windows', 'Service options for Windows')
     windows_group.add_argument('--service-program', dest='service_program', help='service bin path')
     windows_group.add_argument('--service-arguments', nargs='+', dest='service_arguments', help='service arguments')
