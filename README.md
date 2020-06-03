@@ -59,6 +59,9 @@ Options for Windows:
                         service login account
   --service-password SERVICE_PASSWORD
                         service login password
+  --service-restart     restart service after service failure
+  --service-restart-delay SERVICE_RESTART_DELAY
+                        restart delay(in seconds) after service failure
 
 Options for Linux:
   Service options for Linux
@@ -81,7 +84,9 @@ Also, you can create a `deployment.json` file in a directory and run `ez-deploy`
     "display": "Example Service",
     "description": "A service",
     "start": "auto",
-    "file": "example.service"
+    "file": "example.service",
+    "restart": true,
+    "restart_delay": 30
   }
 }
 ```
