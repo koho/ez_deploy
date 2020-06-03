@@ -28,9 +28,9 @@ def install(name, program, arguments=None, path=None, convert_path=False, **kwar
         args = [activate_path, '&', wrapper_path, name, program]
         if arguments:
             args.extend(['--arguments', ' '.join(arguments)])
-        for extra in ['display', 'description', 'start', 'depend', 'obj', 'password']:
+        for extra in ['display', 'description', 'start', 'depend', 'obj', 'password', 'failure-reset', 'failure-actions']:
             if kwargs.get(extra):
-                args.extend([f'--{extra}', kwargs[extra]])
+                args.extend([f'--{extra}', str(kwargs[extra])])
         subprocess.check_call(args, shell=True)
     else:
         if not os.path.isfile(name):
@@ -121,6 +121,15 @@ def deploy(path, requirements=None, package_dir=None):
         if package_dir:
             args.extend(['--no-index', '--find-links', package_dir])
         subprocess.check_call(args, shell=False)
+    if IS_WIN:
+        try:
+            import srvwrapper
+        except:
+            print("Installing srvwrapper...")
+            args = [pip_path, 'install', 'srvwrapper']
+            if package_dir:
+                args.extend(['--no-index', '--find-links', package_dir])
+            subprocess.check_call(args, shell=False)
     return True
 
 
@@ -157,49 +166,46 @@ def main():
     windows_group.add_argument('--service-depend', dest='service_depend', help='service dependencies')
     windows_group.add_argument('--service-obj', dest='service_obj', help='service login account')
     windows_group.add_argument('--service-password', dest='service_password', help='service login password')
+    windows_group.add_argument('--service-restart', action='store_true', dest='service_restart', default=False,
+                               help='restart service after service failure')
+    windows_group.add_argument('--service-restart-delay', dest='service_restart_delay',
+                               help='restart delay(in seconds) after service failure', type=int, default=30)
     linux_group = parser.add_argument_group('Options for Linux', 'Service options for Linux')
     linux_group.add_argument('--service-file', dest='service_file', help='service file to install '
                                                                          '(default=SERVICE_NAME.service)')
     linux_group.add_argument('--service-convert-path', dest='service_convert_path',
                              help='convert service path to absolute path')
     options = parser.parse_args()
-    config = {}
     if os.path.exists(options.config):
         with open(options.config, encoding='utf8') as f:
             config = json.load(f)
-    for name, value in options.__dict__.items():
-        if value is None:
-            continue
-        pk, sep, sk = name.partition('_')
-        if not pk:
-            continue
-        if sk:
-            if pk not in config:
-                config[pk] = {}
-            config[pk][sk] = value
-        else:
-            config[pk] = value
-    service = config.get('service', {})
+        for name, value in config.items():
+            if isinstance(value, dict):
+                for k, v in value.items():
+                    setattr(options, name + '_' + k, v)
+            else:
+                setattr(options, name, value)
     if IS_WIN:
-        service_name = service.get('name')
+        service_name = options.service_name
     else:
-        if service.get('file'):
-            service_name = service['file']
-        elif service.get('name'):
-            service_name = service['name'] + '.service'
+        if options.service_file:
+            service_name = options.service_file
+        elif options.service_name:
+            service_name = options.service_name + '.service'
         else:
             service_name = None
-    if 'name' in service:
-        service.pop('name')
+
     action_map = {
-        'env': {'func': env, 'args': (config.get('env'),)},
-        'deploy': {'func': deploy, 'args': (config.get('env'), config.get('requirements'), config.get('dir')),
+        'env': {'func': env, 'args': (options.env,)},
+        'deploy': {'func': deploy, 'args': (options.env, options.requirements, options.dir),
                    'depends': ['env']},
         'start': {'func': start, 'args': (service_name,)},
         'stop': {'func': stop, 'args': (service_name,)},
         'install': {'func': install, 'args': tuple(),
-                    'kwargs': {'name': service_name, 'program': service.get('program'),
-                               'path': config.get('env'), **service},
+                    'kwargs': {'name': service_name, 'program': options.service_program,
+                               'path': options.env,
+                               **({'failure-reset': 30, 'failure-actions': 'restart/%d' % (options.service_restart_delay * 1000)} if options.service_restart else {}),
+                               **{k.partition('_')[-1]: v for k, v in options.__dict__.items() if k.startswith('service_') and k != 'service_name'}},
                     'depends': ['deploy']},
         'uninstall': {'func': uninstall, 'args': (service_name,)},
     }
